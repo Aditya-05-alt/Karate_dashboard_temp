@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IGKA DojoManager — Portfolio Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Segoe UI', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .rank-pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .modal-backdrop { background: rgba(15, 23, 42, 0.55); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .fade-in { animation: fadeIn 0.35s ease; }
+  </style>
+</head>
+<body class="bg-gray-50 text-slate-800">
+
+  <!-- LOGIN -->
+  <div id="login-screen" class="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-red-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="z-10 w-full max-w-md">
+      <div class="mb-8 text-center">
+        <div class="bg-white/10 p-4 rounded-full inline-flex mb-4 border border-white/10">
+          <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <h1 class="text-4xl font-bold text-white tracking-tight">IGKA Admin</h1>
+        <p class="text-gray-400 mt-2">Local portfolio demo — no backend</p>
+      </div>
+      <form id="login-form" class="bg-white rounded-2xl shadow-2xl p-8 space-y-5">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Welcome Back</h2>
+          <p class="text-sm text-gray-500">Use any email / password to enter</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="login-email" required value="sensei@dojo.com" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="login-password" required value="demo123" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" />
+        </div>
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition">Sign In</button>
+        <p class="text-xs text-center text-gray-400">Data is stored in your browser (localStorage) only.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div id="app-shell" class="hidden h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="h-screen bg-slate-900 text-white flex flex-col fixed left-0 top-0 w-64 z-50 transition-all duration-300">
+      <div class="p-6 text-2xl font-bold border-b border-slate-800 flex items-center gap-2 h-20 cursor-pointer" onclick="toggleSidebar()">
+        <span class="text-red-500 text-3xl">🥋</span>
+        <span id="brand-text">DojoManager</span>
+      </div>
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+        <button data-page="dashboard" class="nav-btn flex items-center gap-3 p-3 rounded-lg w-full text-left hover:bg-slate-800 text-gray-300">
+          <span>📊</span><span class="nav-label">Dashboard</span>
+        </button>
+        <button data-page="users" class="nav-btn flex items-center gap-3 p-3 rounded-lg w-full text-left hover:bg-slate-800 text-gray-300">
+          <span>👤</span><span class="nav-label">Admins</span>
+        </button>
+        <button data-page="students" class="nav-btn flex items-center gap-3 p-3 rounded-lg w-full text-left hover:bg-slate-800 text-gray-300">
+          <span>👥</span><span class="nav-label">Students</span>
+        </button>
+        <button data-page="dojos" class="nav-btn flex items-center gap-3 p-3 rounded-lg w-full text-left hover:bg-slate-800 text-gray-300">
+          <span>🏯</span><span class="nav-label">Dojos</span>
+        </button>
+        <button data-page="instructors" class="nav-btn flex items-center gap-3 p-3 rounded-lg w-full text-left hover:bg-slate-800 text-gray-300">
+          <span>🥋</span><span class="nav-label">Instructors</span>
+        </button>
+      </nav>
+      <div class="p-4 border-t border-slate-800">
+        <button onclick="logout()" class="flex items-center gap-3 text-gray-400 hover:text-white w-full p-3 rounded-lg hover:bg-slate-800">
+          <span>🚪</span><span class="nav-label">Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <div id="main-area" class="flex-1 flex flex-col min-w-0 ml-64 transition-all duration-300 h-screen">
+      <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
+        <div class="text-sm text-gray-500">IGKA Karate Management · <span class="text-red-600 font-medium">Local Demo</span></div>
+        <div class="flex items-center gap-3">
+          <button onclick="resetDemoData()" class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50" title="Reset seed data">Reset Data</button>
+          <span id="nav-username" class="text-sm font-medium text-gray-700">Sensei</span>
+          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-sm">👤</div>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto p-4 md:p-6">
+
+        <!-- DASHBOARD -->
+        <section id="page-dashboard" class="page fade-in">
+          <div class="min-h-full flex flex-col justify-center items-center text-center p-4 md:p-8">
+            <div class="max-w-3xl mx-auto mb-12 space-y-4">
+              <div class="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-semibold">Secure Admin Panel</div>
+              <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">Welcome to <span class="text-red-600">IGKA</span></h1>
+              <p class="text-xl font-light text-gray-600">Karate Management System</p>
+              <p class="text-gray-500 max-w-xl mx-auto">Manage dojos, students, and instructors. All CRUD runs in your browser only — perfect for portfolio demos.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-10">
+              <button onclick="navigate('students')" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition text-left">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-2xl">👥</div>
+                <h3 class="text-xl font-bold mb-2">Students</h3>
+                <p class="text-gray-500 text-sm mb-4">Roster, belt ranks, and active status.</p>
+                <span class="text-blue-600 font-bold text-sm">Manage Students →</span>
+              </button>
+              <button onclick="navigate('instructors')" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition text-left">
+                <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-4 text-2xl">🥋</div>
+                <h3 class="text-xl font-bold mb-2">Instructors</h3>
+                <p class="text-gray-500 text-sm mb-4">Profiles, ranks, and assignments.</p>
+                <span class="text-purple-600 font-bold text-sm">View Senseis →</span>
+              </button>
+              <button onclick="navigate('dojos')" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition text-left">
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mb-4 text-2xl">🏯</div>
+                <h3 class="text-xl font-bold mb-2">Dojo Locations</h3>
+                <p class="text-gray-500 text-sm mb-4">Facilities, phone, and lead instructors.</p>
+                <span class="text-red-600 font-bold text-sm">Check Dojos →</span>
+              </button>
+            </div>
+            <div id="dash-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl"></div>
+            <p class="mt-12 text-gray-400 text-sm">© 2026 International Gosoku-Ryu Karate Association · Portfolio Template</p>
+          </div>
+        </section>
+
+        <!-- STUDENTS -->
+        <section id="page-students" class="page fade-in">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Students</h2>
+              <p class="text-sm text-gray-500">Create, edit, and delete students locally</p>
+            </div>
+            <button onclick="openStudentModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Add Student</button>
+          </div>
+          <div id="student-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-col md:flex-row gap-3">
+            <input id="student-search" type="search" placeholder="Search name, phone, dojo…" class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500" oninput="renderStudents()" />
+            <select id="student-filter-rank" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" onchange="renderStudents()">
+              <option value="">All Ranks</option>
+            </select>
+            <select id="student-filter-status" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" onchange="renderStudents()">
+              <option value="">All Status</option>
+              <option>Active</option>
+              <option>Inactive</option>
+              <option>Suspended</option>
+            </select>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-left text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Name</th>
+                  <th class="px-4 py-3 font-medium">Dojo</th>
+                  <th class="px-4 py-3 font-medium">Rank</th>
+                  <th class="px-4 py-3 font-medium">Age</th>
+                  <th class="px-4 py-3 font-medium">Phone</th>
+                  <th class="px-4 py-3 font-medium">Status</th>
+                  <th class="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- DOJOS -->
+        <section id="page-dojos" class="page fade-in">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Dojos</h2>
+              <p class="text-sm text-gray-500">Manage dojo locations locally</p>
+            </div>
+            <button onclick="openDojoModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Add Dojo</button>
+          </div>
+          <div id="dojo-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+            <input id="dojo-search" type="search" placeholder="Search dojo or instructor…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500" oninput="renderDojos()" />
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-left text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Dojo</th>
+                  <th class="px-4 py-3 font-medium">Instructor</th>
+                  <th class="px-4 py-3 font-medium">Phone</th>
+                  <th class="px-4 py-3 font-medium">Students</th>
+                  <th class="px-4 py-3 font-medium">Status</th>
+                  <th class="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dojos-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- INSTRUCTORS -->
+        <section id="page-instructors" class="page fade-in">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Instructors</h2>
+              <p class="text-sm text-gray-500">Sensei profiles with local CRUD</p>
+            </div>
+            <button onclick="openInstructorModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Add Instructor</button>
+          </div>
+          <div id="instructor-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+            <input id="instructor-search" type="search" placeholder="Search name, email, phone…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500" oninput="renderInstructors()" />
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-left text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Name</th>
+                  <th class="px-4 py-3 font-medium">Rank</th>
+                  <th class="px-4 py-3 font-medium">Contact</th>
+                  <th class="px-4 py-3 font-medium">Age</th>
+                  <th class="px-4 py-3 font-medium">Status</th>
+                  <th class="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="instructors-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- USERS / ADMINS -->
+        <section id="page-users" class="page fade-in">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Admins</h2>
+              <p class="text-sm text-gray-500">Local admin user accounts</p>
+            </div>
+            <button onclick="openUserModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Add Admin</button>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+            <input id="user-search" type="search" placeholder="Search name or email…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500" oninput="renderUsers()" />
+          </div>
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-left text-gray-500">
+                <tr>
+                  <th class="px-4 py-3 font-medium">ID</th>
+                  <th class="px-4 py-3 font-medium">Name</th>
+                  <th class="px-4 py-3 font-medium">Email</th>
+                  <th class="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- GENERIC MODAL -->
+  <div id="modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-6 py-4 border-b">
+        <h3 id="modal-title" class="text-lg font-bold">Form</h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+      </div>
+      <form id="modal-form" class="p-6 space-y-4"></form>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'igka_portfolio_demo_v1';
+const AUTH_KEY = 'igka_portfolio_auth';
+
+const RANKS = [
+  'White', 'Yellow', 'Yellow Stripe', 'Orange', 'Green',
+  'Green Stripe', 'Blue', 'Purple', 'Brown 3rd Kyu',
+  'Brown 2nd Kyu', 'Brown 1st Kyu', 'Black (Shodan)', 'Black (Nidan)', 'Black (Sandan)', 'Black (Yondan)'
+];
+
+const INSTRUCTOR_RANKS = [
+  'Black (Shodan)', 'Black (Nidan)', 'Black (Sandan)',
+  'Black (Yondan)', 'Black (Godan)', 'Shihan', 'Kyoshi'
+];
+
+const SEED = {
+  students: [
+    { id: 1, name: 'Daniel LaRusso', rank: 'Black (Shodan)', dob: '2007-01-01', phone: '555-1234', instructor: 'Sensei Miyagi', age: 17, status: 'Active', dojo: 'Miyagi-Do' },
+    { id: 2, name: 'Johnny Lawrence', rank: 'Black (Nidan)', dob: '1972-02-02', phone: '555-5678', instructor: 'Sensei Kreese', age: 52, status: 'Inactive', dojo: 'Cobra Kai' },
+    { id: 3, name: 'Miguel Diaz', rank: 'Brown 1st Kyu', dob: '2008-03-03', phone: '555-9012', instructor: 'Johnny Lawrence', age: 16, status: 'Active', dojo: 'Eagle Fang' },
+    { id: 4, name: 'Samantha LaRusso', rank: 'Brown 2nd Kyu', dob: '2008-04-04', phone: '555-3456', instructor: 'Daniel LaRusso', age: 16, status: 'Active', dojo: 'Miyagi-Do' },
+    { id: 5, name: 'Eli Moskowitz', rank: 'Green Stripe', dob: '2008-05-05', phone: '555-7890', instructor: 'Johnny Lawrence', age: 16, status: 'Active', dojo: 'Eagle Fang' },
+    { id: 6, name: 'Robby Keene', rank: 'Black (Shodan)', dob: '2008-02-04', phone: '555-4422', instructor: 'Daniel LaRusso', age: 16, status: 'Active', dojo: 'Miyagi-Do' },
+    { id: 7, name: 'Tory Nichols', rank: 'Brown 1st Kyu', dob: '2007-07-07', phone: '555-2345', instructor: 'Johnny Lawrence', age: 17, status: 'Active', dojo: 'Cobra Kai' },
+    { id: 8, name: 'Demetri Alexopoulos', rank: 'Green Stripe', dob: '2008-08-08', phone: '555-6789', instructor: 'Daniel LaRusso', age: 16, status: 'Inactive', dojo: 'Miyagi-Do' },
+    { id: 9, name: 'Kyler Park', rank: 'Purple', dob: '2007-09-12', phone: '555-1122', instructor: 'John Kreese', age: 17, status: 'Active', dojo: 'Cobra Kai' },
+    { id: 10, name: 'Kenny Payne', rank: 'Brown 2nd Kyu', dob: '2009-11-05', phone: '555-4433', instructor: 'Johnny Lawrence', age: 15, status: 'Active', dojo: 'Cobra Kai' },
+  ],
+  dojos: [
+    { id: 1, name: 'Miyagi-Do Karate', phone: '555-0101', instructor: 'Daniel LaRusso', students: 42, status: 'Active', address: 'Reseda, CA' },
+    { id: 2, name: 'Cobra Kai', phone: '555-0102', instructor: 'Johnny Lawrence', students: 85, status: 'Active', address: 'San Fernando Valley' },
+    { id: 3, name: 'Eagle Fang', phone: '555-0103', instructor: 'Miguel Diaz', students: 30, status: 'Active', address: 'Los Angeles' },
+    { id: 4, name: 'Topanga Karate', phone: '555-0104', instructor: 'Xander Stone', students: 15, status: 'Inactive', address: 'Topanga' },
+    { id: 5, name: 'Locust Valley Dojo', phone: '555-0105', instructor: 'Terry Silver', students: 120, status: 'Active', address: 'Locust Valley' },
+  ],
+  instructors: [
+    { id: 1, name: 'Daniel LaRusso', belt: 'Black (Nidan)', age: 52, phone: '555-0101', email: 'daniel@miyagido.com', dob: '1966-12-18', status: 'Active' },
+    { id: 2, name: 'Johnny Lawrence', belt: 'Black (Nidan)', age: 52, phone: '555-0102', email: 'johnny@eaglefang.com', dob: '1967-08-20', status: 'Active' },
+    { id: 3, name: 'John Kreese', belt: 'Black (Godan)', age: 75, phone: '555-0666', email: 'sensei@cobrakai.com', dob: '1946-10-02', status: 'Suspended' },
+    { id: 4, name: 'Terry Silver', belt: 'Black (Yondan)', age: 70, phone: '555-0999', email: 'terry@dynatox.com', dob: '1950-03-15', status: 'Inactive' },
+    { id: 5, name: 'Chozen Toguchi', belt: 'Black (Sandan)', age: 52, phone: '555-0888', email: 'chozen@okinawa.jp', dob: '1967-01-10', status: 'Active' },
+  ],
+  users: [
+    { id: 1, name: 'Admin Sensei', email: 'admin@igka.com', password: 'admin123' },
+    { id: 2, name: 'Office Staff', email: 'office@igka.com', password: 'office123' },
+  ],
+};
+
+let db = null;
+let editContext = { type: null, id: null };
+let sidebarCollapsed = false;
+
+function loadDB() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
+  }
+  const fresh = structuredClone(SEED);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function saveDB() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+
+function nextId(list) {
+  return list.length ? Math.max(...list.map(x => x.id)) + 1 : 1;
+}
+
+function resetDemoData() {
+  if (!confirm('Reset all local demo data to seed values?')) return;
+  db = structuredClone(SEED);
+  saveDB();
+  refreshAll();
+  alert('Demo data reset.');
+}
+
+function statusBadge(status) {
+  const map = {
+    Active: 'bg-green-50 text-green-700 ring-1 ring-green-600/20',
+    Inactive: 'bg-red-50 text-red-700 ring-1 ring-red-600/20',
+    Suspended: 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20',
+  };
+  const cls = map[status] || 'bg-gray-100 text-gray-700';
+  return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${cls}">${status || '—'}</span>`;
+}
+
+function rankPill(rank) {
+  const r = (rank || '').toLowerCase();
+  let cls = 'bg-gray-100 text-gray-800 border border-gray-200';
+  if (r.includes('black') || r.includes('shihan') || r.includes('kyoshi')) cls = 'bg-black text-white';
+  else if (r.includes('brown')) cls = 'bg-[#795548] text-white';
+  else if (r.includes('purple')) cls = 'bg-purple-600 text-white';
+  else if (r.includes('blue')) cls = 'bg-blue-600 text-white';
+  else if (r.includes('green')) cls = 'bg-green-600 text-white';
+  else if (r.includes('orange')) cls = 'bg-orange-500 text-white';
+  else if (r.includes('yellow')) cls = 'bg-yellow-400 text-yellow-900';
+  else if (r.includes('white')) cls = 'bg-white text-gray-800 border-2 border-gray-200';
+  return `<span class="rank-pill ${cls}">${rank || '—'}</span>`;
+}
+
+function statCard(title, value, color) {
+  return `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-lg ${color} text-white flex items-center justify-center text-sm font-bold">${String(value).slice(0, 3)}</div>
+    <div><p class="text-xs text-gray-500 font-medium">${title}</p><h3 class="text-xl font-bold text-gray-800">${value}</h3></div>
+  </div>`;
+}
+
+function actionBtns(type, id) {
+  return `<div class="flex gap-2">
+    <button onclick="editItem('${type}', ${id})" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 border border-blue-100 text-xs font-semibold">Edit</button>
+    <button onclick="deleteItem('${type}', ${id})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-100 text-xs font-semibold">Delete</button>
+  </div>`;
+}
+
+/* ---------- RENDERERS ---------- */
+function renderDashboard() {
+  document.getElementById('dash-stats').innerHTML = [
+    statCard('Students', db.students.length, 'bg-blue-600'),
+    statCard('Instructors', db.instructors.length, 'bg-purple-600'),
+    statCard('Dojos', db.dojos.length, 'bg-red-600'),
+    statCard('Admins', db.users.length, 'bg-slate-700'),
+  ].join('');
+}
+
+function renderStudents() {
+  const q = (document.getElementById('student-search').value || '').toLowerCase();
+  const rank = document.getElementById('student-filter-rank').value;
+  const status = document.getElementById('student-filter-status').value;
+  const rows = db.students.filter(s => {
+    const hay = `${s.name} ${s.phone} ${s.dojo} ${s.instructor}`.toLowerCase();
+    return (!q || hay.includes(q)) && (!rank || s.rank === rank) && (!status || s.status === status);
+  });
+  const active = db.students.filter(s => s.status === 'Active').length;
+  document.getElementById('student-stats').innerHTML = [
+    statCard('Total', db.students.length, 'bg-blue-600'),
+    statCard('Active', active, 'bg-green-600'),
+    statCard('Inactive', db.students.length - active, 'bg-slate-500'),
+    statCard('Showing', rows.length, 'bg-red-600'),
+  ].join('');
+  document.getElementById('students-tbody').innerHTML = rows.map(s => `
+    <tr class="border-t border-gray-100 hover:bg-slate-50">
+      <td class="px-4 py-3 font-semibold">${esc(s.name)}</td>
+      <td class="px-4 py-3 text-gray-600">${esc(s.dojo)}</td>
+      <td class="px-4 py-3">${rankPill(s.rank)}</td>
+      <td class="px-4 py-3">${s.age ?? '—'}</td>
+      <td class="px-4 py-3 font-mono text-xs">${esc(s.phone)}</td>
+      <td class="px-4 py-3">${statusBadge(s.status)}</td>
+      <td class="px-4 py-3">${actionBtns('students', s.id)}</td>
+    </tr>`).join('') || `<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No students found</td></tr>`;
+}
+
+function renderDojos() {
+  const q = (document.getElementById('dojo-search').value || '').toLowerCase();
+  const rows = db.dojos.filter(d => `${d.name} ${d.instructor}`.toLowerCase().includes(q));
+  const active = db.dojos.filter(d => d.status === 'Active').length;
+  document.getElementById('dojo-stats').innerHTML = [
+    statCard('Total', db.dojos.length, 'bg-red-600'),
+    statCard('Active', active, 'bg-green-600'),
+    statCard('Inactive', db.dojos.length - active, 'bg-slate-500'),
+    statCard('Showing', rows.length, 'bg-blue-600'),
+  ].join('');
+  document.getElementById('dojos-tbody').innerHTML = rows.map(d => `
+    <tr class="border-t border-gray-100 hover:bg-slate-50">
+      <td class="px-4 py-3"><div class="font-bold">${esc(d.name)}</div><div class="text-xs text-gray-500">${esc(d.address || '')}</div></td>
+      <td class="px-4 py-3">${esc(d.instructor)}</td>
+      <td class="px-4 py-3 font-mono text-xs">${esc(d.phone)}</td>
+      <td class="px-4 py-3"><span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${d.students || 0}</span></td>
+      <td class="px-4 py-3">${statusBadge(d.status)}</td>
+      <td class="px-4 py-3">${actionBtns('dojos', d.id)}</td>
+    </tr>`).join('') || `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No dojos found</td></tr>`;
+}
+
+function renderInstructors() {
+  const q = (document.getElementById('instructor-search').value || '').toLowerCase();
+  const rows = db.instructors.filter(i => `${i.name} ${i.email} ${i.phone}`.toLowerCase().includes(q));
+  const active = db.instructors.filter(i => i.status === 'Active').length;
+  document.getElementById('instructor-stats').innerHTML = [
+    statCard('Total', db.instructors.length, 'bg-purple-600'),
+    statCard('Active', active, 'bg-green-600'),
+    statCard('Other', db.instructors.length - active, 'bg-slate-500'),
+    statCard('Showing', rows.length, 'bg-red-600'),
+  ].join('');
+  document.getElementById('instructors-tbody').innerHTML = rows.map(i => `
+    <tr class="border-t border-gray-100 hover:bg-slate-50">
+      <td class="px-4 py-3"><div class="font-bold">${esc(i.name)}</div><div class="text-xs text-gray-500">ID #${i.id}</div></td>
+      <td class="px-4 py-3">${rankPill(i.belt)}</td>
+      <td class="px-4 py-3 text-xs text-gray-600"><div>${esc(i.email)}</div><div>${esc(i.phone)}</div></td>
+      <td class="px-4 py-3">${i.age ?? '—'}</td>
+      <td class="px-4 py-3">${statusBadge(i.status)}</td>
+      <td class="px-4 py-3">${actionBtns('instructors', i.id)}</td>
+    </tr>`).join('') || `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No instructors found</td></tr>`;
+}
+
+function renderUsers() {
+  const q = (document.getElementById('user-search').value || '').toLowerCase();
+  const rows = db.users.filter(u => `${u.name} ${u.email}`.toLowerCase().includes(q));
+  document.getElementById('users-tbody').innerHTML = rows.map(u => `
+    <tr class="border-t border-gray-100 hover:bg-slate-50">
+      <td class="px-4 py-3">${u.id}</td>
+      <td class="px-4 py-3 font-bold">${esc(u.name)}</td>
+      <td class="px-4 py-3 text-gray-600">${esc(u.email)}</td>
+      <td class="px-4 py-3">${actionBtns('users', u.id)}</td>
+    </tr>`).join('') || `<tr><td colspan="4" class="px-4 py-8 text-center text-gray-400">No admins found</td></tr>`;
+}
+
+function refreshAll() {
+  renderDashboard();
+  renderStudents();
+  renderDojos();
+  renderInstructors();
+  renderUsers();
+}
+
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* ---------- MODALS / CRUD ---------- */
+function openModal(title, fieldsHtml) {
+  document.getElementById('modal-title').textContent = title;
+  const form = document.getElementById('modal-form');
+  form.innerHTML = fieldsHtml + `
+    <div class="flex justify-end gap-2 pt-2">
+      <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-gray-200 text-sm">Cancel</button>
+      <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Save</button>
+    </div>`;
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('modal').classList.add('flex');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal').classList.remove('flex');
+  editContext = { type: null, id: null };
+}
+
+function field(name, label, value = '', type = 'text', extra = '') {
+  return `<div><label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
+    <input name="${name}" type="${type}" value="${esc(value)}" ${extra} class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500" /></div>`;
+}
+
+function selectField(name, label, options, value = '') {
+  const opts = options.map(o => `<option value="${esc(o)}" ${o === value ? 'selected' : ''}>${esc(o)}</option>`).join('');
+  return `<div><label class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
+    <select name="${name}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-500">${opts}</select></div>`;
+}
+
+function openStudentModal(item = null) {
+  editContext = { type: 'students', id: item?.id || null };
+  const dojoNames = [...new Set(db.dojos.map(d => d.name))];
+  openModal(item ? 'Edit Student' : 'Add Student', [
+    field('name', 'Name', item?.name || '', 'text', 'required'),
+    field('dob', 'Date of Birth', item?.dob || '', 'date'),
+    field('age', 'Age', item?.age || '', 'number'),
+    field('phone', 'Phone', item?.phone || ''),
+    selectField('rank', 'Rank', RANKS, item?.rank || 'White'),
+    selectField('status', 'Status', ['Active', 'Inactive', 'Suspended'], item?.status || 'Active'),
+    selectField('dojo', 'Dojo', dojoNames.length ? dojoNames : ['Miyagi-Do'], item?.dojo || dojoNames[0] || ''),
+    field('instructor', 'Instructor', item?.instructor || ''),
+  ].join(''));
+}
+
+function openDojoModal(item = null) {
+  editContext = { type: 'dojos', id: item?.id || null };
+  openModal(item ? 'Edit Dojo' : 'Add Dojo', [
+    field('name', 'Dojo Name', item?.name || '', 'text', 'required'),
+    field('instructor', 'Lead Instructor', item?.instructor || '', 'text', 'required'),
+    field('phone', 'Phone', item?.phone || ''),
+    field('address', 'Address', item?.address || ''),
+    field('students', 'Student Count', item?.students || 0, 'number'),
+    selectField('status', 'Status', ['Active', 'Inactive'], item?.status || 'Active'),
+  ].join(''));
+}
+
+function openInstructorModal(item = null) {
+  editContext = { type: 'instructors', id: item?.id || null };
+  openModal(item ? 'Edit Instructor' : 'Add Instructor', [
+    field('name', 'Name', item?.name || '', 'text', 'required'),
+    selectField('belt', 'Rank', INSTRUCTOR_RANKS, item?.belt || 'Black (Shodan)'),
+    field('email', 'Email', item?.email || '', 'email'),
+    field('phone', 'Phone', item?.phone || ''),
+    field('dob', 'Date of Birth', item?.dob || '', 'date'),
+    field('age', 'Age', item?.age || '', 'number'),
+    selectField('status', 'Status', ['Active', 'Inactive', 'Suspended'], item?.status || 'Active'),
+  ].join(''));
+}
+
+function openUserModal(item = null) {
+  editContext = { type: 'users', id: item?.id || null };
+  openModal(item ? 'Edit Admin' : 'Add Admin', [
+    field('name', 'Name', item?.name || '', 'text', 'required'),
+    field('email', 'Email', item?.email || '', 'email', 'required'),
+    field('password', 'Password', item?.password || '', 'text', 'required'),
+  ].join(''));
+}
+
+function editItem(type, id) {
+  const item = db[type].find(x => x.id === id);
+  if (!item) return;
+  if (type === 'students') openStudentModal(item);
+  if (type === 'dojos') openDojoModal(item);
+  if (type === 'instructors') openInstructorModal(item);
+  if (type === 'users') openUserModal(item);
+}
+
+function deleteItem(type, id) {
+  if (!confirm('Delete this record?')) return;
+  db[type] = db[type].filter(x => x.id !== id);
+  saveDB();
+  refreshAll();
+}
+
+document.getElementById('modal-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+  if (data.age !== undefined) data.age = data.age === '' ? null : Number(data.age);
+  if (data.students !== undefined) data.students = Number(data.students || 0);
+
+  const { type, id } = editContext;
+  if (!type) return;
+
+  if (id) {
+    const idx = db[type].findIndex(x => x.id === id);
+    if (idx >= 0) db[type][idx] = { ...db[type][idx], ...data, id };
+  } else {
+    db[type].push({ ...data, id: nextId(db[type]) });
+  }
+  saveDB();
+  closeModal();
+  refreshAll();
+});
+
+/* ---------- NAV / AUTH ---------- */
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    const active = btn.dataset.page === page;
+    btn.classList.toggle('bg-red-600', active);
+    btn.classList.toggle('text-white', active);
+    btn.classList.toggle('hover:bg-slate-800', !active);
+    btn.classList.toggle('text-gray-300', !active);
+  });
+  refreshAll();
+}
+
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  const side = document.getElementById('sidebar');
+  const main = document.getElementById('main-area');
+  side.classList.toggle('w-64', !sidebarCollapsed);
+  side.classList.toggle('w-20', sidebarCollapsed);
+  main.classList.toggle('ml-64', !sidebarCollapsed);
+  main.classList.toggle('ml-20', sidebarCollapsed);
+  document.getElementById('brand-text').classList.toggle('hidden', sidebarCollapsed);
+  document.querySelectorAll('.nav-label').forEach(el => el.classList.toggle('hidden', sidebarCollapsed));
+}
+
+function showApp(user) {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('app-shell').classList.add('flex');
+  document.getElementById('nav-username').textContent = user?.name || user?.email || 'Sensei';
+  navigate('dashboard');
+}
+
+function logout() {
+  localStorage.removeItem(AUTH_KEY);
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('flex');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+document.getElementById('login-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const user = { name: email.split('@')[0] || 'Sensei', email };
+  localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+  showApp(user);
+});
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+
+/* ---------- BOOT ---------- */
+(function init() {
+  db = loadDB();
+  const rankSelect = document.getElementById('student-filter-rank');
+  RANKS.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r;
+    rankSelect.appendChild(opt);
+  });
+
+  const auth = localStorage.getItem(AUTH_KEY);
+  if (auth) {
+    try { showApp(JSON.parse(auth)); } catch (e) { /* stay on login */ }
+  }
+})();
+</script>
+</body>
+</html>
